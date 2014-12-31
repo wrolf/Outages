@@ -44,7 +44,7 @@ import net.wrolf.android.common.accounts.GenericAccountService;
 import net.wrolf.android.outages.provider.FeedContract;
 
 /**
- * List fragment containing a list of Atom entry objects (articles) stored in the local database.
+ * List fragment containing a list of Atom outage objects (articles) stored in the local database.
  *
  * <p>Database access is mediated by a content provider, specified in
  * {@link net.wrolf.android.outages.provider.FeedProvider}. This content
@@ -62,10 +62,10 @@ import net.wrolf.android.outages.provider.FeedContract;
  * runs immediately. An indeterminate ProgressBar element is displayed, showing that the sync is
  * occurring.
  */
-public class EntryListFragment extends ListFragment
+public class OutageListFragment extends ListFragment
         implements LoaderManager.LoaderCallbacks<Cursor> {
 
-    private static final String TAG = "EntryListFragment";
+    private static final String TAG = "OutageListFragment";
 
     /**
      * Cursor adapter for controlling ListView results.
@@ -90,10 +90,10 @@ public class EntryListFragment extends ListFragment
      * Projection for querying the content provider.
      */
     private static final String[] PROJECTION = new String[]{
-            FeedContract.Entry._ID,
-            FeedContract.Entry.COLUMN_NAME_TITLE,
-            FeedContract.Entry.COLUMN_NAME_LINK,
-            FeedContract.Entry.COLUMN_NAME_PUBLISHED
+            FeedContract.Outage._ID,
+            FeedContract.Outage.COLUMN_NAME_TITLE,
+            FeedContract.Outage.COLUMN_NAME_LINK,
+            FeedContract.Outage.COLUMN_NAME_PUBLISHED
     };
 
     // Column indexes. The index of a column in the Cursor is the same as its relative position in
@@ -111,8 +111,8 @@ public class EntryListFragment extends ListFragment
      * List of Cursor columns to read from when preparing an adapter to populate the ListView.
      */
     private static final String[] FROM_COLUMNS = new String[]{
-            FeedContract.Entry.COLUMN_NAME_TITLE,
-            FeedContract.Entry.COLUMN_NAME_PUBLISHED
+            FeedContract.Outage.COLUMN_NAME_TITLE,
+            FeedContract.Outage.COLUMN_NAME_PUBLISHED
     };
 
     /**
@@ -126,7 +126,7 @@ public class EntryListFragment extends ListFragment
      * Mandatory empty constructor for the fragment manager to instantiate the
      * fragment (e.g. upon screen orientation changes).
      */
-    public EntryListFragment() {}
+    public OutageListFragment() {}
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -213,11 +213,11 @@ public class EntryListFragment extends ListFragment
         // We only have one loader, so we can ignore the value of i.
         // (It'll be '0', as set in onCreate().)
         return new CursorLoader(getActivity(),  // Context
-                FeedContract.Entry.CONTENT_URI, // URI
+                FeedContract.Outage.CONTENT_URI, // URI
                 PROJECTION,                // Projection
                 null,                           // Selection
                 null,                           // Selection args
-                FeedContract.Entry.COLUMN_NAME_PUBLISHED + " desc"); // Sort
+                FeedContract.Outage.COLUMN_NAME_PUBLISHED + " desc"); // Sort
     }
 
     /**
@@ -280,7 +280,7 @@ public class EntryListFragment extends ListFragment
         // Get the link to the article represented by the item.
         String articleUrlString = c.getString(COLUMN_URL_STRING);
         if (articleUrlString == null) {
-            Log.e(TAG, "Attempt to launch entry with null link");
+            Log.e(TAG, "Attempt to launch outage with null link");
             return;
         }
 

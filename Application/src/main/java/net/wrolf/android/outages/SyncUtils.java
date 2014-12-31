@@ -39,7 +39,7 @@ public class SyncUtils {
     public static final String ACCOUNT_TYPE = "net.wrolf.android.outages.account";
 
     /**
-     * Create an entry for this application in the system account list, if it isn't already there.
+     * Create an outage for this application in the system account list, if it isn't already there.
      *
      * @param context Context
      */

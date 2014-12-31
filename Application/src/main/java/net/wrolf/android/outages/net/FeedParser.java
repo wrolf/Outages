@@ -31,8 +31,8 @@ import java.util.List;
 /**
  * This class parses generic Atom feeds.
  *
- * <p>Given an InputStream representation of a feed, it returns a List of entries,
- * where each list element represents a single entry (post) in the XML feed.
+ * <p>Given an InputStream representation of a feed, it returns a List of outages,
+ * where each list element represents a single outage (post) in the XML feed.
  *
  * <p>An example of an Atom feed can be found at:
  * http://en.wikipedia.org/w/index.php?title=Atom_(standard)&oldid=560239173#Example_of_an_Atom_1.0_feed
@@ -48,14 +48,14 @@ public class FeedParser {
     // We don't use XML namespaces
     private static final String ns = null;
 
-    /** Parse an Atom feed, returning a collection of Entry objects.
+    /** Parse an Atom feed, returning a collection of Outage objects.
      *
      * @param in Atom feed, as a stream.
-     * @return List of {@link net.wrolf.android.outages.net.FeedParser.Entry} objects.
+     * @return List of {@link net.wrolf.android.outages.net.FeedParser.Outage} objects.
      * @throws org.xmlpull.v1.XmlPullParserException on error parsing feed.
      * @throws java.io.IOException on I/O error.
      */
-    public List<Entry> parse(InputStream in)
+    public List<Outage> parse(InputStream in)
             throws XmlPullParserException, IOException, ParseException {
         try {
             XmlPullParser parser = Xml.newPullParser();
@@ -72,13 +72,13 @@ public class FeedParser {
      * Decode a feed attached to an XmlPullParser.
      *
      * @param parser Incoming XMl
-     * @return List of {@link net.wrolf.android.outages.net.FeedParser.Entry} objects.
+     * @return List of {@link net.wrolf.android.outages.net.FeedParser.Outage} objects.
      * @throws org.xmlpull.v1.XmlPullParserException on error parsing feed.
      * @throws java.io.IOException on I/O error.
      */
-    private List<Entry> readFeed(XmlPullParser parser)
+    private List<Outage> readFeed(XmlPullParser parser)
             throws XmlPullParserException, IOException, ParseException {
-        List<Entry> entries = new ArrayList<Entry>();
+        List<Outage> outages = new ArrayList<Outage>();
 
         // Search for <feed> tags. These wrap the beginning/end of an Atom document.
         //
@@ -93,11 +93,11 @@ public class FeedParser {
                 continue;
             }
             String name = parser.getName();
-            // Starts by looking for the <entry> tag. This tag repeates inside of <feed> for each
+            // Starts by looking for the <outage> tag. This tag repeates inside of <feed> for each
             // article in the feed.
             //
             // Example:
-            // <entry>
+            // <outage>
             //   <title>Article title</title>
             //   <link rel="alternate" type="text/html" href="http://example.com/article/1234"/>
             //   <link rel="edit" href="http://example.com/admin/article/1234"/>
@@ -109,23 +109,23 @@ public class FeedParser {
             //     <name>Rick Deckard</name>
             //     <email>deckard@example.com</email>
             //   </author>
-            // </entry>
-            if (name.equals("entry")) {
-                entries.add(readEntry(parser));
+            // </outage>
+            if (name.equals("outage")) {
+                outages.add(readOutage(parser));
             } else {
                 skip(parser);
             }
         }
-        return entries;
+        return outages;
     }
 
     /**
-     * Parses the contents of an entry. If it encounters a title, summary, or link tag, hands them
+     * Parses the contents of an outage. If it encounters a title, summary, or link tag, hands them
      * off to their respective "read" methods for processing. Otherwise, skips the tag.
      */
-    private Entry readEntry(XmlPullParser parser)
+    private Outage readOutage(XmlPullParser parser)
             throws XmlPullParserException, IOException, ParseException {
-        parser.require(XmlPullParser.START_TAG, ns, "entry");
+        parser.require(XmlPullParser.START_TAG, ns, "outage");
         String id = null;
         String title = null;
         String link = null;
@@ -160,7 +160,7 @@ public class FeedParser {
                 skip(parser);
             }
         }
-        return new Entry(id, title, link, publishedOn);
+        return new Outage(id, title, link, publishedOn);
     }
 
     /**
@@ -258,17 +258,17 @@ public class FeedParser {
     }
 
     /**
-     * This class represents a single entry (post) in the XML feed.
+     * This class represents a single outage (post) in the XML feed.
      *
      * <p>It includes the data members "title," "link," and "summary."
      */
-    public static class Entry {
+    public static class Outage {
         public final String id;
         public final String title;
         public final String link;
         public final long published;
 
-        Entry(String id, String title, String link, long published) {
+        Outage(String id, String title, String link, long published) {
             this.id = id;
             this.title = title;
             this.link = link;

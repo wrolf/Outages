@@ -39,39 +39,39 @@ public class FeedContract {
     public static final Uri BASE_CONTENT_URI = Uri.parse("content://" + CONTENT_AUTHORITY);
 
     /**
-     * Path component for "entry"-type resources..
+     * Path component for "outage"-type resources..
      */
-    private static final String PATH_ENTRIES = "entries";
+    private static final String PATH_ENTRIES = "outages";
 
     /**
-     * Columns supported by "entries" records.
+     * Columns supported by "outages" records.
      */
-    public static class Entry implements BaseColumns {
+    public static class Outage implements BaseColumns {
         /**
-         * MIME type for lists of entries.
+         * MIME type for lists of outages.
          */
         public static final String CONTENT_TYPE =
-                ContentResolver.CURSOR_DIR_BASE_TYPE + "/vnd.outages.entries";
+                ContentResolver.CURSOR_DIR_BASE_TYPE + "/vnd.outages.outages";
         /**
-         * MIME type for individual entries.
+         * MIME type for individual outages.
          */
         public static final String CONTENT_ITEM_TYPE =
-                ContentResolver.CURSOR_ITEM_BASE_TYPE + "/vnd.outages.entry";
+                ContentResolver.CURSOR_ITEM_BASE_TYPE + "/vnd.outages.outage";
 
         /**
-         * Fully qualified URI for "entry" resources.
+         * Fully qualified URI for "outage" resources.
          */
         public static final Uri CONTENT_URI =
                 BASE_CONTENT_URI.buildUpon().appendPath(PATH_ENTRIES).build();
 
         /**
-         * Table name where records are stored for "entry" resources.
+         * Table name where records are stored for "outage" resources.
          */
-        public static final String TABLE_NAME = "entry";
+        public static final String TABLE_NAME = "outage";
         /**
          * Atom ID. (Note: Not to be confused with the database primary key, which is _ID.
          */
-        public static final String COLUMN_NAME_ENTRY_ID = "entry_id";
+        public static final String COLUMN_NAME_ENTRY_ID = "outage_id";
         /**
          * Article title
          */

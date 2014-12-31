@@ -47,8 +47,8 @@ import java.util.Map;
  *
  * <pre>
  *     SelectionBuilder builder = new SelectionBuilder();
- *     Cursor c = builder.table(FeedContract.Entry.TABLE_NAME)       // String TABLE_NAME = "entry"
- *                       .where(FeedContract.Entry._ID + "=?", id);  // String _ID = "_ID"
+ *     Cursor c = builder.table(FeedContract.Outage.TABLE_NAME)       // String TABLE_NAME = "outage"
+ *                       .where(FeedContract.Outage._ID + "=?", id);  // String _ID = "_ID"
  *                       .query(db, projection, sortOrder)
  *
  * </pre>
@@ -91,7 +91,7 @@ import java.util.Map;
  * This class is <em>not</em> thread safe.
  */
 public class SelectionBuilder {
-    private static final String TAG = "basicsyncadapter";
+    private static final String TAG = "SelectionBuilder";
 
     private String mTable = null;
     private Map<String, String> mProjectionMap = new HashMap<String, String>();
