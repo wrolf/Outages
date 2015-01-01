@@ -16,8 +16,9 @@
 
 package net.wrolf.android.outages.net;
 
-import android.text.format.Time;
 import android.util.Xml;
+
+import net.wrolf.android.common.logger.Log;
 
 import org.xmlpull.v1.XmlPullParser;
 import org.xmlpull.v1.XmlPullParserException;
@@ -41,238 +42,117 @@ public class FeedParser {
 
     // Constants indicting XML element names that we're interested in
     private static final int TAG_ID = 1;
-    private static final int TAG_TITLE = 2;
-    private static final int TAG_PUBLISHED = 3;
-    private static final int TAG_LINK = 4;
+    private static final int TAG_NODELABEL = 2;
+    private static final int TAG_TIME = 3;
+    private static final int TAG_LOGMESSAGE = 4;
+    private static final int TAG_LINK = 5;
+
+    // <outage>
+    // <outage id="201238">
+    // <ifLostService>
+    // ...
+    // <logMessage>Interface 24.93.73.62 is down.</logMessage>
+    // ...
+    // <time>2014-10-24T15:59:32-04:00</time>
+    // ...
+    // <nodeLabel>twc-rr-nc-2-la-ca</nodeLabel>
+    // </outage>
+
+    private enum outageTag { none, nodeTag, logMessageTag, nodeLabelTag, timeTag }
 
     // We don't use XML namespaces
     private static final String ns = null;
 
-    /** Parse an Atom feed, returning a collection of Outage objects.
+    /** Parse an Outage feed, returning a collection of Outage objects.
      *
-     * @param in Atom feed, as a stream.
+     * @param inputStream Outages feed, as a stream.
      * @return List of {@link net.wrolf.android.outages.net.FeedParser.Outage} objects.
      * @throws org.xmlpull.v1.XmlPullParserException on error parsing feed.
      * @throws java.io.IOException on I/O error.
      */
-    public List<Outage> parse(InputStream in)
-            throws XmlPullParserException, IOException, ParseException {
+    public List<Outage> getOutageDataFromXML(InputStream inputStream)
+        throws XmlPullParserException, IOException, ParseException {
+        final String LOG_TAG = "getOutageDataFromXML";
+
+        outageTag currentTag = outageTag.none;
+
+        List<Outage> outages = new ArrayList<>();
+
+        Outage o = new Outage();
+
         try {
-            XmlPullParser parser = Xml.newPullParser();
-            parser.setFeature(XmlPullParser.FEATURE_PROCESS_NAMESPACES, false);
-            parser.setInput(in, null);
-            parser.nextTag();
-            return readFeed(parser);
+            // XmlPullParser xpp = XmlPullParserFactory.newInstance().newPullParser();
+            XmlPullParser xpp = Xml.newPullParser();
+            xpp.setFeature(XmlPullParser.FEATURE_PROCESS_NAMESPACES, false);
+            xpp.setInput(inputStream, null);
+
+            for (int eventType = xpp.getEventType();
+                 eventType != XmlPullParser.END_DOCUMENT;
+                 eventType = xpp.next())
+            {
+                if(eventType == XmlPullParser.START_DOCUMENT) {
+                    Log.d(LOG_TAG, "In start document");
+                } else if(eventType == XmlPullParser.START_TAG) {
+//                    Log.d(LOG_TAG, "In start tag = "+xpp.getName());
+                    // TODO outage id=
+                    String tagName = xpp.getName();
+                    if (tagName.equalsIgnoreCase("outage")) {
+                        currentTag = outageTag.nodeTag;
+                        o.outageId = xpp.getAttributeValue(null, "id");
+                    } else if (tagName.equalsIgnoreCase("logMessage"))
+                        currentTag = outageTag.logMessageTag;
+                    else if (tagName.equalsIgnoreCase("nodeLabel"))
+                        currentTag = outageTag.nodeLabelTag;
+                    else if (tagName.equalsIgnoreCase("time"))
+                        currentTag = outageTag.timeTag;
+                    else
+                        currentTag = outageTag.none;
+
+                } else if(eventType == XmlPullParser.END_TAG) {
+//                    Log.d(LOG_TAG, "In end tag = "+xpp.getName());
+                    if (xpp.getName().contentEquals("outage")) {
+                        Log.d(LOG_TAG, "o={" + o.outageId + o.time + "," + o.nodeLabel + "," + o.logMessage + "}");
+                        outages.add(o);
+                    }
+                } else if(eventType == XmlPullParser.TEXT) {
+                    switch (currentTag) {
+                        case logMessageTag:
+//                            Log.d(LOG_TAG, "logMessage = " + xpp.getText());
+                            o.logMessage = xpp.getText();
+                            break;
+
+                        case nodeLabelTag:
+//                            Log.d(LOG_TAG, "nodeLabel = " + xpp.getText());
+                            o.nodeLabel = xpp.getText();
+                            break;
+
+                        case timeTag:
+                            o.time = xpp.getText();
+                            // TODO parse time
+                            // o.time = Long.parseLong(xpp.getText());
+                            break;
+                    }
+                }
+            }
+
+        } catch (XmlPullParserException|IOException e) {
+            e.printStackTrace();
         } finally {
-            in.close();
+            inputStream.close();
         }
-    }
 
-    /**
-     * Decode a feed attached to an XmlPullParser.
-     *
-     * @param parser Incoming XMl
-     * @return List of {@link net.wrolf.android.outages.net.FeedParser.Outage} objects.
-     * @throws org.xmlpull.v1.XmlPullParserException on error parsing feed.
-     * @throws java.io.IOException on I/O error.
-     */
-    private List<Outage> readFeed(XmlPullParser parser)
-            throws XmlPullParserException, IOException, ParseException {
-        List<Outage> outages = new ArrayList<Outage>();
-
-        // Search for <feed> tags. These wrap the beginning/end of an Atom document.
-        //
-        // Example:
-        // <?xml version="1.0" encoding="utf-8"?>
-        // <feed xmlns="http://www.w3.org/2005/Atom">
-        // ...
-        // </feed>
-        parser.require(XmlPullParser.START_TAG, ns, "feed");
-        while (parser.next() != XmlPullParser.END_TAG) {
-            if (parser.getEventType() != XmlPullParser.START_TAG) {
-                continue;
-            }
-            String name = parser.getName();
-            // Starts by looking for the <outage> tag. This tag repeates inside of <feed> for each
-            // article in the feed.
-            //
-            // Example:
-            // <outage>
-            //   <title>Article title</title>
-            //   <link rel="alternate" type="text/html" href="http://example.com/article/1234"/>
-            //   <link rel="edit" href="http://example.com/admin/article/1234"/>
-            //   <id>urn:uuid:218AC159-7F68-4CC6-873F-22AE6017390D</id>
-            //   <published>2003-06-27T12:00:00Z</published>
-            //   <updated>2003-06-28T12:00:00Z</updated>
-            //   <summary>Article summary goes here.</summary>
-            //   <author>
-            //     <name>Rick Deckard</name>
-            //     <email>deckard@example.com</email>
-            //   </author>
-            // </outage>
-            if (name.equals("outage")) {
-                outages.add(readOutage(parser));
-            } else {
-                skip(parser);
-            }
-        }
         return outages;
     }
 
     /**
-     * Parses the contents of an outage. If it encounters a title, summary, or link tag, hands them
-     * off to their respective "read" methods for processing. Otherwise, skips the tag.
-     */
-    private Outage readOutage(XmlPullParser parser)
-            throws XmlPullParserException, IOException, ParseException {
-        parser.require(XmlPullParser.START_TAG, ns, "outage");
-        String id = null;
-        String title = null;
-        String link = null;
-        long publishedOn = 0;
-
-        while (parser.next() != XmlPullParser.END_TAG) {
-            if (parser.getEventType() != XmlPullParser.START_TAG) {
-                continue;
-            }
-            String name = parser.getName();
-            if (name.equals("id")){
-                // Example: <id>urn:uuid:218AC159-7F68-4CC6-873F-22AE6017390D</id>
-                id = readTag(parser, TAG_ID);
-            } else if (name.equals("title")) {
-                // Example: <title>Article title</title>
-                title = readTag(parser, TAG_TITLE);
-            } else if (name.equals("link")) {
-                // Example: <link rel="alternate" type="text/html" href="http://example.com/article/1234"/>
-                //
-                // Multiple link types can be included. readAlternateLink() will only return
-                // non-null when reading an "alternate"-type link. Ignore other responses.
-                String tempLink = readTag(parser, TAG_LINK);
-                if (tempLink != null) {
-                    link = tempLink;
-                }
-            } else if (name.equals("published")) {
-                // Example: <published>2003-06-27T12:00:00Z</published>
-                Time t = new Time();
-                t.parse3339(readTag(parser, TAG_PUBLISHED));
-                publishedOn = t.toMillis(false);
-            } else {
-                skip(parser);
-            }
-        }
-        return new Outage(id, title, link, publishedOn);
-    }
-
-    /**
-     * Process an incoming tag and read the selected value from it.
-     */
-    private String readTag(XmlPullParser parser, int tagType)
-            throws IOException, XmlPullParserException {
-        String tag = null;
-        String endTag = null;
-
-        switch (tagType) {
-            case TAG_ID:
-                return readBasicTag(parser, "id");
-            case TAG_TITLE:
-                return readBasicTag(parser, "title");
-            case TAG_PUBLISHED:
-                return readBasicTag(parser, "published");
-            case TAG_LINK:
-                return readAlternateLink(parser);
-            default:
-                throw new IllegalArgumentException("Unknown tag type: " + tagType);
-        }
-    }
-
-    /**
-     * Reads the body of a basic XML tag, which is guaranteed not to contain any nested elements.
-     *
-     * <p>You probably want to call readTag().
-     *
-     * @param parser Current parser object
-     * @param tag XML element tag name to parse
-     * @return Body of the specified tag
-     * @throws java.io.IOException
-     * @throws org.xmlpull.v1.XmlPullParserException
-     */
-    private String readBasicTag(XmlPullParser parser, String tag)
-            throws IOException, XmlPullParserException {
-        parser.require(XmlPullParser.START_TAG, ns, tag);
-        String result = readText(parser);
-        parser.require(XmlPullParser.END_TAG, ns, tag);
-        return result;
-    }
-
-    /**
-     * Processes link tags in the feed.
-     */
-    private String readAlternateLink(XmlPullParser parser)
-            throws IOException, XmlPullParserException {
-        String link = null;
-        parser.require(XmlPullParser.START_TAG, ns, "link");
-        String tag = parser.getName();
-        String relType = parser.getAttributeValue(null, "rel");
-        if (relType.equals("alternate")) {
-            link = parser.getAttributeValue(null, "href");
-        }
-        while (true) {
-            if (parser.nextTag() == XmlPullParser.END_TAG) break;
-            // Intentionally break; consumes any remaining sub-tags.
-        }
-        return link;
-    }
-
-    /**
-     * For the tags title and summary, extracts their text values.
-     */
-    private String readText(XmlPullParser parser) throws IOException, XmlPullParserException {
-        String result = null;
-        if (parser.next() == XmlPullParser.TEXT) {
-            result = parser.getText();
-            parser.nextTag();
-        }
-        return result;
-    }
-
-    /**
-     * Skips tags the parser isn't interested in. Uses depth to handle nested tags. i.e.,
-     * if the next tag after a START_TAG isn't a matching END_TAG, it keeps going until it
-     * finds the matching END_TAG (as indicated by the value of "depth" being 0).
-     */
-    private void skip(XmlPullParser parser) throws XmlPullParserException, IOException {
-        if (parser.getEventType() != XmlPullParser.START_TAG) {
-            throw new IllegalStateException();
-        }
-        int depth = 1;
-        while (depth != 0) {
-            switch (parser.next()) {
-                case XmlPullParser.END_TAG:
-                    depth--;
-                    break;
-                case XmlPullParser.START_TAG:
-                    depth++;
-                    break;
-            }
-        }
-    }
-
-    /**
-     * This class represents a single outage (post) in the XML feed.
-     *
-     * <p>It includes the data members "title," "link," and "summary."
+     * This class represents a single outage in the XML feed.
      */
     public static class Outage {
-        public final String id;
-        public final String title;
-        public final String link;
-        public final long published;
+        public String outageId  = null;
+        public String logMessage = null;
+        public String time = null;
+        // TODO parse time public long time = 0;
+        public String nodeLabel = null;
 
-        Outage(String id, String title, String link, long published) {
-            this.id = id;
-            this.title = title;
-            this.link = link;
-            this.published = published;
-        }
     }
 }

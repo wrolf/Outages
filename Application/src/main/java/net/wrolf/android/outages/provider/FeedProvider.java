@@ -221,12 +221,16 @@ public class FeedProvider extends ContentProvider {
         private static final String COMMA_SEP = ",";
         /** SQL statement to create "outage" table. */
         private static final String SQL_CREATE_ENTRIES =
-                "CREATE TABLE " + FeedContract.Outage.TABLE_NAME + " (" +
+                "CREATE TABLE " +
+                        FeedContract.Outage.TABLE_NAME + " (" +
                         FeedContract.Outage._ID + " INTEGER PRIMARY KEY," +
-                        FeedContract.Outage.COLUMN_NAME_ENTRY_ID + TYPE_TEXT + COMMA_SEP +
-                        FeedContract.Outage.COLUMN_NAME_TITLE    + TYPE_TEXT + COMMA_SEP +
-                        FeedContract.Outage.COLUMN_NAME_LINK + TYPE_TEXT + COMMA_SEP +
-                        FeedContract.Outage.COLUMN_NAME_PUBLISHED + TYPE_INTEGER + ")";
+                        FeedContract.Outage.COLUMN_NAME_OUTAGE_ID + TYPE_TEXT + COMMA_SEP +
+                        FeedContract.Outage.COLUMN_NAME_LOG_MESSAGE + TYPE_TEXT + COMMA_SEP +
+                        // TODO parse time
+                        // FeedContract.Outage.COLUMN_NAME_TIME + TYPE_INTEGER + COMMA_SEP +
+                        FeedContract.Outage.COLUMN_NAME_TIME + TYPE_TEXT + COMMA_SEP +
+                        FeedContract.Outage.COLUMN_NAME_NODE_LABEL + TYPE_TEXT  +
+                        ")";
 
         /** SQL statement to drop "outage" table. */
         private static final String SQL_DELETE_ENTRIES =

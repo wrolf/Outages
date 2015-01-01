@@ -20,10 +20,8 @@ import android.accounts.Account;
 import android.annotation.TargetApi;
 import android.app.Activity;
 import android.content.ContentResolver;
-import android.content.Intent;
 import android.content.SyncStatusObserver;
 import android.database.Cursor;
-import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.support.v4.app.ListFragment;
@@ -31,14 +29,11 @@ import android.support.v4.app.LoaderManager;
 import android.support.v4.content.CursorLoader;
 import android.support.v4.content.Loader;
 import android.support.v4.widget.SimpleCursorAdapter;
-import android.text.format.Time;
-import android.util.Log;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.ListView;
-import android.widget.TextView;
 
 import net.wrolf.android.common.accounts.GenericAccountService;
 import net.wrolf.android.outages.provider.FeedContract;
@@ -91,28 +86,27 @@ public class OutageListFragment extends ListFragment
      */
     private static final String[] PROJECTION = new String[]{
             FeedContract.Outage._ID,
-            FeedContract.Outage.COLUMN_NAME_TITLE,
-            FeedContract.Outage.COLUMN_NAME_LINK,
-            FeedContract.Outage.COLUMN_NAME_PUBLISHED
+            FeedContract.Outage.COLUMN_NAME_OUTAGE_ID,
+            FeedContract.Outage.COLUMN_NAME_LOG_MESSAGE,
+            FeedContract.Outage.COLUMN_NAME_TIME,
+            FeedContract.Outage.COLUMN_NAME_NODE_LABEL
+
     };
 
     // Column indexes. The index of a column in the Cursor is the same as its relative position in
     // the projection.
-    /** Column index for _ID */
     private static final int COLUMN_ID = 0;
-    /** Column index for title */
-    private static final int COLUMN_TITLE = 1;
-    /** Column index for link */
-    private static final int COLUMN_URL_STRING = 2;
-    /** Column index for published */
-    private static final int COLUMN_PUBLISHED = 3;
+    private static final int COLUMN_OUTAGE_ID = 1;
+    private static final int COLUMN_LOG_MESSAGE = 2;
+    private static final int COLUMN_TIME = 3;
+    private static final int COLUMN_NODE_LABEL = 4;
 
     /**
      * List of Cursor columns to read from when preparing an adapter to populate the ListView.
      */
     private static final String[] FROM_COLUMNS = new String[]{
-            FeedContract.Outage.COLUMN_NAME_TITLE,
-            FeedContract.Outage.COLUMN_NAME_PUBLISHED
+            FeedContract.Outage.COLUMN_NAME_LOG_MESSAGE,
+            FeedContract.Outage.COLUMN_NAME_TIME
     };
 
     /**
@@ -163,16 +157,18 @@ public class OutageListFragment extends ListFragment
         mAdapter.setViewBinder(new SimpleCursorAdapter.ViewBinder() {
             @Override
             public boolean setViewValue(View view, Cursor cursor, int i) {
-                if (i == COLUMN_PUBLISHED) {
-                    // Convert timestamp to human-readable date
-                    Time t = new Time();
-                    t.set(cursor.getLong(i));
-                    ((TextView) view).setText(t.format("%Y-%m-%d %H:%M"));
-                    return true;
-                } else {
-                    // Let SimpleCursorAdapter handle other fields automatically
-                    return false;
-                }
+                // TODO format time
+                return false;
+//                if (i == COLUMN_TIME) {
+//                    // Convert timestamp to human-readable date
+//                    Time t = new Time();
+//                    t.set(cursor.getLong(i));
+//                    ((TextView) view).setText(t.format("%Y-%m-%d %H:%M"));
+//                    return true;
+//                } else {
+//                    // Let SimpleCursorAdapter handle other fields automatically
+//                    return false;
+//                }
             }
         });
         setListAdapter(mAdapter);
@@ -217,7 +213,7 @@ public class OutageListFragment extends ListFragment
                 PROJECTION,                // Projection
                 null,                           // Selection
                 null,                           // Selection args
-                FeedContract.Outage.COLUMN_NAME_PUBLISHED + " desc"); // Sort
+                FeedContract.Outage.COLUMN_NAME_TIME + " desc"); // Sort
     }
 
     /**
@@ -274,7 +270,7 @@ public class OutageListFragment extends ListFragment
         // Get a URI for the selected item, then start an Activity that displays the URI. Any
         // Activity that filters for ACTION_VIEW and a URI can accept this. In most cases, this will
         // be a browser.
-
+/*
         // Get the item at the selected position, in the form of a Cursor.
         Cursor c = (Cursor) mAdapter.getItem(position);
         // Get the link to the article represented by the item.
@@ -289,6 +285,7 @@ public class OutageListFragment extends ListFragment
         Uri articleURL = Uri.parse(articleUrlString);
         Intent i = new Intent(Intent.ACTION_VIEW, articleURL);
         startActivity(i);
+*/
     }
 
     /**

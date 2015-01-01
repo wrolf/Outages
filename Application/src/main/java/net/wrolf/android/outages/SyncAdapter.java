@@ -39,8 +39,10 @@ import org.xmlpull.v1.XmlPullParserException;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.Authenticator;
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
+import java.net.PasswordAuthentication;
 import java.net.URL;
 import java.text.ParseException;
 import java.util.ArrayList;
@@ -65,7 +67,7 @@ class SyncAdapter extends AbstractThreadedSyncAdapter {
      * <p>This points to the Android Developers Blog. (Side note: We highly recommend reading the
      * Android Developer Blog to stay up to date on the latest Android platform developments!)
      */
-    private static final String FEED_URL = "http://android-developers.blogspot.com/atom.xml";
+    private static final String FEED_URL = "http://demo.opennms.org/opennms/rest/outages?limit=10&query=ifRegainedService%20is%20null&orderBy=ifLostService";
 
     /**
      * Network connection timeout, in milliseconds.
@@ -87,17 +89,18 @@ class SyncAdapter extends AbstractThreadedSyncAdapter {
      */
     private static final String[] PROJECTION = new String[] {
             FeedContract.Outage._ID,
-            FeedContract.Outage.COLUMN_NAME_ENTRY_ID,
-            FeedContract.Outage.COLUMN_NAME_TITLE,
-            FeedContract.Outage.COLUMN_NAME_LINK,
-            FeedContract.Outage.COLUMN_NAME_PUBLISHED};
+            FeedContract.Outage.COLUMN_NAME_OUTAGE_ID,
+            FeedContract.Outage.COLUMN_NAME_LOG_MESSAGE,
+            FeedContract.Outage.COLUMN_NAME_TIME,
+            FeedContract.Outage.COLUMN_NAME_NODE_LABEL};
 
     // Constants representing column positions from PROJECTION.
     public static final int COLUMN_ID = 0;
-    public static final int COLUMN_ENTRY_ID = 1;
-    public static final int COLUMN_TITLE = 2;
-    public static final int COLUMN_LINK = 3;
-    public static final int COLUMN_PUBLISHED = 4;
+    public static final int COLUMN_OUTAGE_ID = 1;
+    public static final int COLUMN_LOG_MESSAGE = 2;
+    public static final int COLUMN_TIME = 3;
+    public static final int COLUMN_NODE_LABEL = 4;
+
 
     /**
      * Constructor. Obtains handle to content resolver for later use.
@@ -126,7 +129,7 @@ class SyncAdapter extends AbstractThreadedSyncAdapter {
      *
      * <p>This is where we actually perform any work required to perform a sync.
      * {@link android.content.AbstractThreadedSyncAdapter} guarantees that this will be called on a non-UI thread,
-     * so it is safe to peform blocking I/O here.
+     * so it is safe to perform blocking I/O here.
      *
      * <p>The syncResult argument allows you to pass information back to the method that triggered
      * the sync.
@@ -205,16 +208,15 @@ class SyncAdapter extends AbstractThreadedSyncAdapter {
         final ContentResolver contentResolver = getContext().getContentResolver();
 
         Log.i(TAG, "Parsing stream as Atom feed");
-        final List<FeedParser.Outage> outages = feedParser.parse(stream);
+        final List<FeedParser.Outage> outages = feedParser.getOutageDataFromXML(stream);
         Log.i(TAG, "Parsing complete. Found " + outages.size() + " outages");
-
 
         ArrayList<ContentProviderOperation> batch = new ArrayList<ContentProviderOperation>();
 
         // Build hash table of incoming outages
         HashMap<String, FeedParser.Outage> outageMap = new HashMap<String, FeedParser.Outage>();
         for (FeedParser.Outage e : outages) {
-            outageMap.put(e.id, e);
+            outageMap.put(e.outageId, e);
         }
 
         // Get list of all items
@@ -226,33 +228,36 @@ class SyncAdapter extends AbstractThreadedSyncAdapter {
 
         // Find stale data
         int id;
-        String outageId;
-        String title;
-        String link;
-        long published;
+        FeedParser.Outage o = new FeedParser.Outage();
+
         while (c.moveToNext()) {
             syncResult.stats.numEntries++;
             id = c.getInt(COLUMN_ID);
-            outageId = c.getString(COLUMN_ENTRY_ID);
-            title = c.getString(COLUMN_TITLE);
-            link = c.getString(COLUMN_LINK);
-            published = c.getLong(COLUMN_PUBLISHED);
-            FeedParser.Outage match = outageMap.get(outageId);
+            o.outageId = c.getString(COLUMN_OUTAGE_ID);
+            o.logMessage = c.getString(COLUMN_LOG_MESSAGE);
+            o.time = c.getString(COLUMN_TIME);
+            // TODO parse time
+            // o.time = c.getLong(COLUMN_TIME);
+            o.nodeLabel = c.getString(COLUMN_NODE_LABEL);
+            FeedParser.Outage match = outageMap.get(id);
             if (match != null) {
                 // Outage exists. Remove from outage map to prevent insert later.
-                outageMap.remove(outageId);
+                outageMap.remove(id);
                 // Check to see if the outage needs to be updated
                 Uri existingUri = FeedContract.Outage.CONTENT_URI.buildUpon()
                         .appendPath(Integer.toString(id)).build();
-                if ((match.title != null && !match.title.equals(title)) ||
-                        (match.link != null && !match.link.equals(link)) ||
-                        (match.published != published)) {
+                if (    (match.outageId != null && !match.outageId.equals(o.outageId)) ||
+                        (match.logMessage != null && !match.logMessage.equals(o.logMessage)) ||
+                        (match.time != o.time) ||
+                        (match.nodeLabel != null && !match.nodeLabel.equals(o.nodeLabel))
+                        ) {
                     // Update existing record
                     Log.i(TAG, "Scheduling update: " + existingUri);
                     batch.add(ContentProviderOperation.newUpdate(existingUri)
-                            .withValue(FeedContract.Outage.COLUMN_NAME_TITLE, title)
-                            .withValue(FeedContract.Outage.COLUMN_NAME_LINK, link)
-                            .withValue(FeedContract.Outage.COLUMN_NAME_PUBLISHED, published)
+                            .withValue(FeedContract.Outage.COLUMN_NAME_OUTAGE_ID, o.outageId)
+                            .withValue(FeedContract.Outage.COLUMN_NAME_LOG_MESSAGE, o.logMessage)
+                            .withValue(FeedContract.Outage.COLUMN_NAME_TIME, o.time)
+                            .withValue(FeedContract.Outage.COLUMN_NAME_NODE_LABEL, o.nodeLabel)
                             .build());
                     syncResult.stats.numUpdates++;
                 } else {
@@ -271,12 +276,12 @@ class SyncAdapter extends AbstractThreadedSyncAdapter {
 
         // Add new items
         for (FeedParser.Outage e : outageMap.values()) {
-            Log.i(TAG, "Scheduling insert: outage_id=" + e.id);
+            Log.i(TAG, "Scheduling insert: outage_id=" + e.outageId);
             batch.add(ContentProviderOperation.newInsert(FeedContract.Outage.CONTENT_URI)
-                    .withValue(FeedContract.Outage.COLUMN_NAME_ENTRY_ID, e.id)
-                    .withValue(FeedContract.Outage.COLUMN_NAME_TITLE, e.title)
-                    .withValue(FeedContract.Outage.COLUMN_NAME_LINK, e.link)
-                    .withValue(FeedContract.Outage.COLUMN_NAME_PUBLISHED, e.published)
+                    .withValue(FeedContract.Outage.COLUMN_NAME_OUTAGE_ID, e.outageId)
+                    .withValue(FeedContract.Outage.COLUMN_NAME_LOG_MESSAGE, e.logMessage)
+                    .withValue(FeedContract.Outage.COLUMN_NAME_TIME, e.time)
+                    .withValue(FeedContract.Outage.COLUMN_NAME_NODE_LABEL, e.nodeLabel)
                     .build());
             syncResult.stats.numInserts++;
         }
@@ -294,11 +299,19 @@ class SyncAdapter extends AbstractThreadedSyncAdapter {
      * Given a string representation of a URL, sets up a connection and gets an input stream.
      */
     private InputStream downloadUrl(final URL url) throws IOException {
+
+        Authenticator.setDefault(new Authenticator() {
+            protected PasswordAuthentication getPasswordAuthentication() {
+                return new PasswordAuthentication("demo", "demo".toCharArray());
+            }
+        });
+
         HttpURLConnection conn = (HttpURLConnection) url.openConnection();
         conn.setReadTimeout(NET_READ_TIMEOUT_MILLIS /* milliseconds */);
         conn.setConnectTimeout(NET_CONNECT_TIMEOUT_MILLIS /* milliseconds */);
         conn.setRequestMethod("GET");
         conn.setDoInput(true);
+
         // Starts the query
         conn.connect();
         return conn.getInputStream();
