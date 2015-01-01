@@ -1,7 +1,9 @@
 /*
- * Copyright 2013 The Android Open Source Project
+ * Copyright (c) Wrolf Courtney <wrolf@wrolf.net> 2015.
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
+ * Portions copyright 2013 The Android Open Source Project
+ *
+ * Said portions licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
@@ -74,9 +76,9 @@ public class FeedProvider extends ContentProvider {
         final int match = sUriMatcher.match(uri);
         switch (match) {
             case ROUTE_ENTRIES:
-                return FeedContract.Outage.CONTENT_TYPE;
+                return FeedContract.OutageColumns.CONTENT_TYPE;
             case ROUTE_ENTRIES_ID:
-                return FeedContract.Outage.CONTENT_ITEM_TYPE;
+                return FeedContract.OutageColumns.CONTENT_ITEM_TYPE;
             default:
                 throw new UnsupportedOperationException("Unknown uri: " + uri);
         }
@@ -98,10 +100,10 @@ public class FeedProvider extends ContentProvider {
             case ROUTE_ENTRIES_ID:
                 // Return a single outage, by ID.
                 String id = uri.getLastPathSegment();
-                builder.where(FeedContract.Outage._ID + "=?", id);
+                builder.where(FeedContract.OutageColumns._ID + "=?", id);
             case ROUTE_ENTRIES:
                 // Return all known outages.
-                builder.table(FeedContract.Outage.TABLE_NAME)
+                builder.table(FeedContract.OutageColumns.TABLE_NAME)
                        .where(selection, selectionArgs);
                 Cursor c = builder.query(db, projection, sortOrder);
                 // Note: Notification URI must be manually set here for loaders to correctly
@@ -126,8 +128,8 @@ public class FeedProvider extends ContentProvider {
         Uri result;
         switch (match) {
             case ROUTE_ENTRIES:
-                long id = db.insertOrThrow(FeedContract.Outage.TABLE_NAME, null, values);
-                result = Uri.parse(FeedContract.Outage.CONTENT_URI + "/" + id);
+                long id = db.insertOrThrow(FeedContract.OutageColumns.TABLE_NAME, null, values);
+                result = Uri.parse(FeedContract.OutageColumns.CONTENT_URI + "/" + id);
                 break;
             case ROUTE_ENTRIES_ID:
                 throw new UnsupportedOperationException("Insert not supported on URI: " + uri);
@@ -152,14 +154,14 @@ public class FeedProvider extends ContentProvider {
         int count;
         switch (match) {
             case ROUTE_ENTRIES:
-                count = builder.table(FeedContract.Outage.TABLE_NAME)
+                count = builder.table(FeedContract.OutageColumns.TABLE_NAME)
                         .where(selection, selectionArgs)
                         .delete(db);
                 break;
             case ROUTE_ENTRIES_ID:
                 String id = uri.getLastPathSegment();
-                count = builder.table(FeedContract.Outage.TABLE_NAME)
-                       .where(FeedContract.Outage._ID + "=?", id)
+                count = builder.table(FeedContract.OutageColumns.TABLE_NAME)
+                       .where(FeedContract.OutageColumns._ID + "=?", id)
                        .where(selection, selectionArgs)
                        .delete(db);
                 break;
@@ -184,14 +186,14 @@ public class FeedProvider extends ContentProvider {
         int count;
         switch (match) {
             case ROUTE_ENTRIES:
-                count = builder.table(FeedContract.Outage.TABLE_NAME)
+                count = builder.table(FeedContract.OutageColumns.TABLE_NAME)
                         .where(selection, selectionArgs)
                         .update(db, values);
                 break;
             case ROUTE_ENTRIES_ID:
                 String id = uri.getLastPathSegment();
-                count = builder.table(FeedContract.Outage.TABLE_NAME)
-                        .where(FeedContract.Outage._ID + "=?", id)
+                count = builder.table(FeedContract.OutageColumns.TABLE_NAME)
+                        .where(FeedContract.OutageColumns._ID + "=?", id)
                         .where(selection, selectionArgs)
                         .update(db, values);
                 break;
@@ -222,19 +224,19 @@ public class FeedProvider extends ContentProvider {
         /** SQL statement to create "outage" table. */
         private static final String SQL_CREATE_ENTRIES =
                 "CREATE TABLE " +
-                        FeedContract.Outage.TABLE_NAME + " (" +
-                        FeedContract.Outage._ID + " INTEGER PRIMARY KEY," +
-                        FeedContract.Outage.COLUMN_NAME_OUTAGE_ID + TYPE_TEXT + COMMA_SEP +
-                        FeedContract.Outage.COLUMN_NAME_LOG_MESSAGE + TYPE_TEXT + COMMA_SEP +
+                        FeedContract.OutageColumns.TABLE_NAME + " (" +
+                        FeedContract.OutageColumns._ID + " INTEGER PRIMARY KEY," +
+                        FeedContract.OutageColumns.COLUMN_NAME_OUTAGE_ID + TYPE_TEXT + COMMA_SEP +
+                        FeedContract.OutageColumns.COLUMN_NAME_LOG_MESSAGE + TYPE_TEXT + COMMA_SEP +
                         // TODO parse time
                         // FeedContract.Outage.COLUMN_NAME_TIME + TYPE_INTEGER + COMMA_SEP +
-                        FeedContract.Outage.COLUMN_NAME_TIME + TYPE_TEXT + COMMA_SEP +
-                        FeedContract.Outage.COLUMN_NAME_NODE_LABEL + TYPE_TEXT  +
+                        FeedContract.OutageColumns.COLUMN_NAME_TIME + TYPE_TEXT + COMMA_SEP +
+                        FeedContract.OutageColumns.COLUMN_NAME_NODE_LABEL + TYPE_TEXT  +
                         ")";
 
         /** SQL statement to drop "outage" table. */
         private static final String SQL_DELETE_ENTRIES =
-                "DROP TABLE IF EXISTS " + FeedContract.Outage.TABLE_NAME;
+                "DROP TABLE IF EXISTS " + FeedContract.OutageColumns.TABLE_NAME;
 
         public FeedDatabase(Context context) {
             super(context, DATABASE_NAME, null, DATABASE_VERSION);

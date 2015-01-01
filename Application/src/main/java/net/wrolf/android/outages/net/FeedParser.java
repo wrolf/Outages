@@ -1,7 +1,9 @@
 /*
- * Copyright 2013 The Android Open Source Project
+ * Copyright (c) Wrolf Courtney <wrolf@wrolf.net> 2015.
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
+ * Portions copyright 2013 The Android Open Source Project
+ *
+ * Said portions licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
@@ -42,10 +44,9 @@ public class FeedParser {
 
     // Constants indicting XML element names that we're interested in
     private static final int TAG_ID = 1;
-    private static final int TAG_NODELABEL = 2;
+    private static final int TAG_LOG_MESSAGE = 2;
     private static final int TAG_TIME = 3;
-    private static final int TAG_LOGMESSAGE = 4;
-    private static final int TAG_LINK = 5;
+    private static final int TAG_NODE_LABEL = 4;
 
     // <outage>
     // <outage id="201238">
@@ -78,7 +79,11 @@ public class FeedParser {
 
         List<Outage> outages = new ArrayList<>();
 
-        Outage o = new Outage();
+        String outageId = null;
+        String logMessage = null;
+        String time = null;
+        String nodeLabel = null;
+        Outage o;
 
         try {
             // XmlPullParser xpp = XmlPullParserFactory.newInstance().newPullParser();
@@ -98,7 +103,7 @@ public class FeedParser {
                     String tagName = xpp.getName();
                     if (tagName.equalsIgnoreCase("outage")) {
                         currentTag = outageTag.nodeTag;
-                        o.outageId = xpp.getAttributeValue(null, "id");
+                        outageId = xpp.getAttributeValue(null, "id");
                     } else if (tagName.equalsIgnoreCase("logMessage"))
                         currentTag = outageTag.logMessageTag;
                     else if (tagName.equalsIgnoreCase("nodeLabel"))
@@ -111,23 +116,24 @@ public class FeedParser {
                 } else if(eventType == XmlPullParser.END_TAG) {
 //                    Log.d(LOG_TAG, "In end tag = "+xpp.getName());
                     if (xpp.getName().contentEquals("outage")) {
-                        Log.d(LOG_TAG, "o={" + o.outageId + o.time + "," + o.nodeLabel + "," + o.logMessage + "}");
-                        outages.add(o);
+                        Log.d(LOG_TAG, "o={" + outageId + time + "," + nodeLabel + "," + logMessage + "}");
+                        Outage outage = new Outage(outageId, logMessage, time, nodeLabel);
+                        outages.add(outage);
                     }
                 } else if(eventType == XmlPullParser.TEXT) {
                     switch (currentTag) {
                         case logMessageTag:
 //                            Log.d(LOG_TAG, "logMessage = " + xpp.getText());
-                            o.logMessage = xpp.getText();
+                            logMessage = xpp.getText();
                             break;
 
                         case nodeLabelTag:
 //                            Log.d(LOG_TAG, "nodeLabel = " + xpp.getText());
-                            o.nodeLabel = xpp.getText();
+                            nodeLabel = xpp.getText();
                             break;
 
                         case timeTag:
-                            o.time = xpp.getText();
+                            time = xpp.getText();
                             // TODO parse time
                             // o.time = Long.parseLong(xpp.getText());
                             break;
@@ -154,5 +160,11 @@ public class FeedParser {
         // TODO parse time public long time = 0;
         public String nodeLabel = null;
 
+        public Outage(String outageId, String logMessage, String time, String nodeLabel) {
+            this.outageId = outageId;
+            this.logMessage = logMessage;
+            this.time = time;
+            this.nodeLabel = nodeLabel;
+        }
     }
 }

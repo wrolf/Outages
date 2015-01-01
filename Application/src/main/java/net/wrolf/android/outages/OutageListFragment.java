@@ -1,7 +1,9 @@
 /*
- * Copyright 2013 The Android Open Source Project
+ * Copyright (c) Wrolf Courtney <wrolf@wrolf.net> 2015.
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
+ * Portions copyright 2013 The Android Open Source Project
+ *
+ * Said portions licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
@@ -85,11 +87,11 @@ public class OutageListFragment extends ListFragment
      * Projection for querying the content provider.
      */
     private static final String[] PROJECTION = new String[]{
-            FeedContract.Outage._ID,
-            FeedContract.Outage.COLUMN_NAME_OUTAGE_ID,
-            FeedContract.Outage.COLUMN_NAME_LOG_MESSAGE,
-            FeedContract.Outage.COLUMN_NAME_TIME,
-            FeedContract.Outage.COLUMN_NAME_NODE_LABEL
+            FeedContract.OutageColumns._ID,
+            FeedContract.OutageColumns.COLUMN_NAME_OUTAGE_ID,
+            FeedContract.OutageColumns.COLUMN_NAME_LOG_MESSAGE,
+            FeedContract.OutageColumns.COLUMN_NAME_TIME,
+            FeedContract.OutageColumns.COLUMN_NAME_NODE_LABEL
 
     };
 
@@ -105,8 +107,8 @@ public class OutageListFragment extends ListFragment
      * List of Cursor columns to read from when preparing an adapter to populate the ListView.
      */
     private static final String[] FROM_COLUMNS = new String[]{
-            FeedContract.Outage.COLUMN_NAME_LOG_MESSAGE,
-            FeedContract.Outage.COLUMN_NAME_TIME
+            FeedContract.OutageColumns.COLUMN_NAME_LOG_MESSAGE,
+            FeedContract.OutageColumns.COLUMN_NAME_TIME
     };
 
     /**
@@ -209,11 +211,11 @@ public class OutageListFragment extends ListFragment
         // We only have one loader, so we can ignore the value of i.
         // (It'll be '0', as set in onCreate().)
         return new CursorLoader(getActivity(),  // Context
-                FeedContract.Outage.CONTENT_URI, // URI
+                FeedContract.OutageColumns.CONTENT_URI, // URI
                 PROJECTION,                // Projection
                 null,                           // Selection
                 null,                           // Selection args
-                FeedContract.Outage.COLUMN_NAME_TIME + " desc"); // Sort
+                FeedContract.OutageColumns.COLUMN_NAME_TIME + " desc"); // Sort
     }
 
     /**

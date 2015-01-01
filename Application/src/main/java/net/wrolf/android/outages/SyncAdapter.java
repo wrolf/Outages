@@ -1,7 +1,9 @@
 /*
- * Copyright 2013 The Android Open Source Project
+ * Copyright (c) Wrolf Courtney <wrolf@wrolf.net> 2015.
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
+ * Portions copyright 2013 The Android Open Source Project
+ *
+ * Said portions licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
@@ -88,11 +90,11 @@ class SyncAdapter extends AbstractThreadedSyncAdapter {
      * Project used when querying content provider. Returns all known fields.
      */
     private static final String[] PROJECTION = new String[] {
-            FeedContract.Outage._ID,
-            FeedContract.Outage.COLUMN_NAME_OUTAGE_ID,
-            FeedContract.Outage.COLUMN_NAME_LOG_MESSAGE,
-            FeedContract.Outage.COLUMN_NAME_TIME,
-            FeedContract.Outage.COLUMN_NAME_NODE_LABEL};
+            FeedContract.OutageColumns._ID,
+            FeedContract.OutageColumns.COLUMN_NAME_OUTAGE_ID,
+            FeedContract.OutageColumns.COLUMN_NAME_LOG_MESSAGE,
+            FeedContract.OutageColumns.COLUMN_NAME_TIME,
+            FeedContract.OutageColumns.COLUMN_NAME_NODE_LABEL};
 
     // Constants representing column positions from PROJECTION.
     public static final int COLUMN_ID = 0;
@@ -207,7 +209,7 @@ class SyncAdapter extends AbstractThreadedSyncAdapter {
         final FeedParser feedParser = new FeedParser();
         final ContentResolver contentResolver = getContext().getContentResolver();
 
-        Log.i(TAG, "Parsing stream as Atom feed");
+        Log.i(TAG, "Parsing stream as Outages feed");
         final List<FeedParser.Outage> outages = feedParser.getOutageDataFromXML(stream);
         Log.i(TAG, "Parsing complete. Found " + outages.size() + " outages");
 
@@ -221,31 +223,30 @@ class SyncAdapter extends AbstractThreadedSyncAdapter {
 
         // Get list of all items
         Log.i(TAG, "Fetching local outages for merge");
-        Uri uri = FeedContract.Outage.CONTENT_URI; // Get all outages
+        Uri uri = FeedContract.OutageColumns.CONTENT_URI; // Get all outages
         Cursor c = contentResolver.query(uri, PROJECTION, null, null, null);
         assert c != null;
         Log.i(TAG, "Found " + c.getCount() + " local outages. Computing merge solution...");
 
         // Find stale data
-        int id;
-        FeedParser.Outage o = new FeedParser.Outage();
-
         while (c.moveToNext()) {
             syncResult.stats.numEntries++;
-            id = c.getInt(COLUMN_ID);
-            o.outageId = c.getString(COLUMN_OUTAGE_ID);
-            o.logMessage = c.getString(COLUMN_LOG_MESSAGE);
-            o.time = c.getString(COLUMN_TIME);
+            String id = c.getString(COLUMN_OUTAGE_ID);
+            FeedParser.Outage o = new FeedParser.Outage(
+                    c.getString(COLUMN_OUTAGE_ID),
+                    c.getString(COLUMN_LOG_MESSAGE),
+                    c.getString(COLUMN_TIME),
+                    c.getString(COLUMN_NODE_LABEL));
             // TODO parse time
             // o.time = c.getLong(COLUMN_TIME);
-            o.nodeLabel = c.getString(COLUMN_NODE_LABEL);
+
             FeedParser.Outage match = outageMap.get(id);
             if (match != null) {
                 // Outage exists. Remove from outage map to prevent insert later.
                 outageMap.remove(id);
                 // Check to see if the outage needs to be updated
-                Uri existingUri = FeedContract.Outage.CONTENT_URI.buildUpon()
-                        .appendPath(Integer.toString(id)).build();
+                Uri existingUri = FeedContract.OutageColumns.CONTENT_URI.buildUpon()
+                        .appendPath(id).build();
                 if (    (match.outageId != null && !match.outageId.equals(o.outageId)) ||
                         (match.logMessage != null && !match.logMessage.equals(o.logMessage)) ||
                         (match.time != o.time) ||
@@ -254,10 +255,10 @@ class SyncAdapter extends AbstractThreadedSyncAdapter {
                     // Update existing record
                     Log.i(TAG, "Scheduling update: " + existingUri);
                     batch.add(ContentProviderOperation.newUpdate(existingUri)
-                            .withValue(FeedContract.Outage.COLUMN_NAME_OUTAGE_ID, o.outageId)
-                            .withValue(FeedContract.Outage.COLUMN_NAME_LOG_MESSAGE, o.logMessage)
-                            .withValue(FeedContract.Outage.COLUMN_NAME_TIME, o.time)
-                            .withValue(FeedContract.Outage.COLUMN_NAME_NODE_LABEL, o.nodeLabel)
+                            .withValue(FeedContract.OutageColumns.COLUMN_NAME_OUTAGE_ID, o.outageId)
+                            .withValue(FeedContract.OutageColumns.COLUMN_NAME_LOG_MESSAGE, o.logMessage)
+                            .withValue(FeedContract.OutageColumns.COLUMN_NAME_TIME, o.time)
+                            .withValue(FeedContract.OutageColumns.COLUMN_NAME_NODE_LABEL, o.nodeLabel)
                             .build());
                     syncResult.stats.numUpdates++;
                 } else {
@@ -265,8 +266,8 @@ class SyncAdapter extends AbstractThreadedSyncAdapter {
                 }
             } else {
                 // Outage doesn't exist. Remove it from the database.
-                Uri deleteUri = FeedContract.Outage.CONTENT_URI.buildUpon()
-                        .appendPath(Integer.toString(id)).build();
+                Uri deleteUri = FeedContract.OutageColumns.CONTENT_URI.buildUpon()
+                        .appendPath(id).build();
                 Log.i(TAG, "Scheduling delete: " + deleteUri);
                 batch.add(ContentProviderOperation.newDelete(deleteUri).build());
                 syncResult.stats.numDeletes++;
@@ -277,18 +278,18 @@ class SyncAdapter extends AbstractThreadedSyncAdapter {
         // Add new items
         for (FeedParser.Outage e : outageMap.values()) {
             Log.i(TAG, "Scheduling insert: outage_id=" + e.outageId);
-            batch.add(ContentProviderOperation.newInsert(FeedContract.Outage.CONTENT_URI)
-                    .withValue(FeedContract.Outage.COLUMN_NAME_OUTAGE_ID, e.outageId)
-                    .withValue(FeedContract.Outage.COLUMN_NAME_LOG_MESSAGE, e.logMessage)
-                    .withValue(FeedContract.Outage.COLUMN_NAME_TIME, e.time)
-                    .withValue(FeedContract.Outage.COLUMN_NAME_NODE_LABEL, e.nodeLabel)
+            batch.add(ContentProviderOperation.newInsert(FeedContract.OutageColumns.CONTENT_URI)
+                    .withValue(FeedContract.OutageColumns.COLUMN_NAME_OUTAGE_ID, e.outageId)
+                    .withValue(FeedContract.OutageColumns.COLUMN_NAME_LOG_MESSAGE, e.logMessage)
+                    .withValue(FeedContract.OutageColumns.COLUMN_NAME_TIME, e.time)
+                    .withValue(FeedContract.OutageColumns.COLUMN_NAME_NODE_LABEL, e.nodeLabel)
                     .build());
             syncResult.stats.numInserts++;
         }
         Log.i(TAG, "Merge solution ready. Applying batch update");
         mContentResolver.applyBatch(FeedContract.CONTENT_AUTHORITY, batch);
         mContentResolver.notifyChange(
-                FeedContract.Outage.CONTENT_URI, // URI where data was modified
+                FeedContract.OutageColumns.CONTENT_URI, // URI where data was modified
                 null,                           // No local observer
                 false);                         // IMPORTANT: Do not sync to network
         // This sample doesn't support uploads, but if *your* code does, make sure you set
