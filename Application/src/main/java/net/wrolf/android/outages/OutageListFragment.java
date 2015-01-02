@@ -263,7 +263,7 @@ public class OutageListFragment extends ListFragment
             // If the user clicks the "Settings" button.
             case R.id.action_settings:
                 // Launch settings activity
-                Intent i = new Intent(getBaseContext(), SettingsActivity.class);
+                Intent i = new Intent(this.getActivity(), SettingsActivity.class);
                 startActivity(i);
                 return true;
 
