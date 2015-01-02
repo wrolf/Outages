@@ -24,6 +24,9 @@
     <!-- Example General settings -->
     <string name="pref_header_general">General</string>
 
+    <string name="pref_title_server">OpenNMS Server</string>
+    <string name="pref_default_server">demo.opennms.org</string>
+
     <string name="pref_title_method">Method</string>
     <string-array name="pref_method_titles">
         <item>HTTP</item>
@@ -32,10 +35,10 @@
         <item>HTTPS port 8443</item>
     </string-array>
     <string-array name="pref_method_values">
-        <item>1</item>
-        <item>2</item>
-        <item>3</item>
-        <item>4</item>
+        <item>http</item>
+        <item>https</item>
+        <item>http8960</item>
+        <item>http8443</item>
     </string-array>
 
     <!-- Example settings for Data & Sync -->
