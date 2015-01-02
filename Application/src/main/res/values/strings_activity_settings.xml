@@ -24,9 +24,6 @@
     <!-- Example General settings -->
     <string name="pref_header_general">General</string>
 
-    <string name="pref_title_server">OpenNMS Server</string>
-    <string name="pref_default_server">demo.opennms.org</string>
-
     <string name="pref_title_method">Method</string>
     <string-array name="pref_method_titles">
         <item>HTTP</item>
@@ -40,6 +37,15 @@
         <item>http8960</item>
         <item>http8443</item>
     </string-array>
+
+    <string name="pref_title_server">OpenNMS Server</string>
+    <string name="pref_default_server">demo.opennms.org</string>
+
+    <string name="pref_title_user">OpenNMS User</string>
+    <string name="pref_default_user">demo</string>
+
+    <string name="pref_title_password">OpenNMS Password</string>
+    <string name="pref_default_password">demo</string>
 
     <!-- Example settings for Data & Sync -->
     <string name="pref_header_data_sync">Data &amp; sync</string>
