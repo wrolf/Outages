@@ -22,6 +22,7 @@ import android.accounts.Account;
 import android.annotation.TargetApi;
 import android.app.Activity;
 import android.content.ContentResolver;
+import android.content.Intent;
 import android.content.SyncStatusObserver;
 import android.database.Cursor;
 import android.os.Build;
@@ -258,6 +259,16 @@ public class OutageListFragment extends ListFragment
             case R.id.menu_refresh:
                 SyncUtils.TriggerRefresh();
                 return true;
+
+            // If the user clicks the "Settings" button.
+            case R.id.action_settings:
+                // Launch settings activity
+                Intent i = new Intent(null, SettingsActivity.class);
+                Intent i = new Intent(this.getBaseContext(), SettingsActivity.class);
+                Intent i = new Intent(this, SettingsActivity.class);
+                startActivity(i);
+                return true;
+
         }
         return super.onOptionsItemSelected(item);
     }
