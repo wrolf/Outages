@@ -26,12 +26,14 @@ import android.content.ContentProviderOperation;
 import android.content.ContentResolver;
 import android.content.Context;
 import android.content.OperationApplicationException;
+import android.content.SharedPreferences;
 import android.content.SyncResult;
 import android.database.Cursor;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.RemoteException;
+import android.preference.PreferenceManager;
 import android.util.Log;
 
 import net.wrolf.android.outages.net.FeedParser;
@@ -66,10 +68,9 @@ class SyncAdapter extends AbstractThreadedSyncAdapter {
     /**
      * URL to fetch content from during a sync.
      *
-     * <p>This points to the Android Developers Blog. (Side note: We highly recommend reading the
-     * Android Developer Blog to stay up to date on the latest Android platform developments!)
+     * <p>This points to an OpenNMS server
      */
-    private static final String FEED_URL = "http://demo.opennms.org/opennms/rest/outages?limit=10&query=ifRegainedService%20is%20null&orderBy=ifLostService";
+    private static final String OUTAGES_PATH = "/opennms/rest/outages?limit=25&query=ifRegainedService%20is%20null&orderBy=ifLostService";
 
     /**
      * Network connection timeout, in milliseconds.
@@ -139,9 +140,27 @@ class SyncAdapter extends AbstractThreadedSyncAdapter {
     @Override
     public void onPerformSync(Account account, Bundle extras, String authority,
                               ContentProviderClient provider, SyncResult syncResult) {
-        Log.i(TAG, "Beginning network synchronization");
+//        Log.i(TAG, "Beginning network synchronization");
         try {
-            final URL location = new URL(FEED_URL);
+            SharedPreferences sharedPref = PreferenceManager.getDefaultSharedPreferences(getContext());
+            String method = sharedPref.getString("method_list", "");
+            Log.d(TAG, "method_list: " + method);
+            String server = sharedPref.getString("server", "");
+            Log.d(TAG, "server: " + server);
+
+            String prefix;
+            if (method.equals("http")) {
+                prefix = "http://" + server;
+            } else if (method.equals("https")) {
+                prefix = "https://" + server;
+            } else if (method.equals("http8960")) {
+                prefix = "http://" + server + ":8960";
+            } else { // method == https8443
+                prefix = "https://" + server + ":8443";
+            }
+            Log.d(TAG, "prefix: " + prefix);
+
+            final URL location = new URL(prefix + OUTAGES_PATH);
             InputStream stream = null;
 
             try {
@@ -180,7 +199,7 @@ class SyncAdapter extends AbstractThreadedSyncAdapter {
             syncResult.databaseError = true;
             return;
         }
-        Log.i(TAG, "Network synchronization complete");
+//        Log.i(TAG, "Network synchronization complete");
     }
 
     /**
@@ -304,7 +323,13 @@ class SyncAdapter extends AbstractThreadedSyncAdapter {
 
         Authenticator.setDefault(new Authenticator() {
             protected PasswordAuthentication getPasswordAuthentication() {
-                return new PasswordAuthentication("demo", "demo".toCharArray());
+                SharedPreferences sharedPref = PreferenceManager.getDefaultSharedPreferences(getContext());
+                String user = sharedPref.getString("user", "");
+                Log.d(TAG, "user: " + user);
+                final String password = sharedPref.getString("password", "");
+                Log.d(TAG, "password: " + password);
+
+                return new PasswordAuthentication(user, password.toCharArray());
             }
         });
 

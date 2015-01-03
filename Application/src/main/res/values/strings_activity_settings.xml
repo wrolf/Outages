@@ -35,7 +35,7 @@
         <item>http</item>
         <item>https</item>
         <item>http8960</item>
-        <item>http8443</item>
+        <item>https8443</item>
     </string-array>
 
     <string name="pref_title_server">OpenNMS Server</string>
