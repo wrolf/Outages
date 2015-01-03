@@ -61,7 +61,7 @@ import java.util.List;
  * SyncService.
  */
 class SyncAdapter extends AbstractThreadedSyncAdapter {
-    public static final String TAG = "SyncAdapter";
+    private static final String TAG = "SyncAdapter";
 
     /**
      * URL to fetch content from during a sync.
@@ -232,6 +232,7 @@ class SyncAdapter extends AbstractThreadedSyncAdapter {
         while (c.moveToNext()) {
             syncResult.stats.numEntries++;
             String id = c.getString(COLUMN_OUTAGE_ID);
+            Log.d(TAG,id);
             FeedParser.Outage o = new FeedParser.Outage(
                     c.getString(COLUMN_OUTAGE_ID),
                     c.getString(COLUMN_LOG_MESSAGE),
@@ -246,11 +247,11 @@ class SyncAdapter extends AbstractThreadedSyncAdapter {
                 outageMap.remove(id);
                 // Check to see if the outage needs to be updated
                 Uri existingUri = FeedContract.OutageColumns.CONTENT_URI.buildUpon()
-                        .appendPath(id).build();
-                if (    (match.outageId != null && !match.outageId.equals(o.outageId)) ||
+                        .appendPath(c.getString(COLUMN_ID)).build();
+                if (    (match.outageId   != null && !match.outageId  .equals(o.outageId)) ||
                         (match.logMessage != null && !match.logMessage.equals(o.logMessage)) ||
-                        (match.time != o.time) ||
-                        (match.nodeLabel != null && !match.nodeLabel.equals(o.nodeLabel))
+                        (match.time       != null && !match.time      .equals(o.time)) ||
+                        (match.nodeLabel  != null && !match.nodeLabel .equals(o.nodeLabel))
                         ) {
                     // Update existing record
                     Log.i(TAG, "Scheduling update: " + existingUri);
@@ -267,7 +268,7 @@ class SyncAdapter extends AbstractThreadedSyncAdapter {
             } else {
                 // Outage doesn't exist. Remove it from the database.
                 Uri deleteUri = FeedContract.OutageColumns.CONTENT_URI.buildUpon()
-                        .appendPath(id).build();
+                        .appendPath(c.getString(COLUMN_ID)).build();
                 Log.i(TAG, "Scheduling delete: " + deleteUri);
                 batch.add(ContentProviderOperation.newDelete(deleteUri).build());
                 syncResult.stats.numDeletes++;

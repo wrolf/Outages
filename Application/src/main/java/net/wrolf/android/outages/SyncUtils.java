@@ -1,7 +1,9 @@
 /*
- * Copyright 2013 Google Inc.
+ * Copyright (c) Wrolf Courtney <wrolf@wrolf.net> 2015.
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
+ * Portions copyright 2013 The Android Open Source Project
+ *
+ * Said portions licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
@@ -32,14 +34,14 @@ import net.wrolf.android.outages.provider.FeedContract;
  * Static helper methods for working with the sync framework.
  */
 public class SyncUtils {
-    private static final long SYNC_FREQUENCY = 60 * 60;  // 1 hour (in seconds)
+    private static final long SYNC_FREQUENCY = 5 * 60;  // 5 minutes (in seconds)
     private static final String CONTENT_AUTHORITY = FeedContract.CONTENT_AUTHORITY;
     private static final String PREF_SETUP_COMPLETE = "setup_complete";
     // Value below must match the account type specified in res/xml/syncadapter.xml
     public static final String ACCOUNT_TYPE = "net.wrolf.android.outages.account";
 
     /**
-     * Create an outage for this application in the system account list, if it isn't already there.
+     * Create an entry for this application in the system account list, if it isn't already there.
      *
      * @param context Context
      */
@@ -67,7 +69,7 @@ public class SyncUtils {
 
         // Schedule an initial sync if we detect problems with either our account or our local
         // data has been deleted. (Note that it's possible to clear app data WITHOUT affecting
-        // the account list, so wee need to check both.)
+        // the account list, so we need to check both.)
         if (newAccount || !setupComplete) {
             TriggerRefresh();
             PreferenceManager.getDefaultSharedPreferences(context).edit()
