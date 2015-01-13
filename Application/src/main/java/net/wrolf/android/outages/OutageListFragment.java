@@ -23,15 +23,20 @@ import android.annotation.TargetApi;
 import android.app.Activity;
 import android.content.ContentResolver;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.content.SyncStatusObserver;
 import android.database.Cursor;
+import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
+import android.preference.PreferenceManager;
+import android.provider.Browser;
 import android.support.v4.app.ListFragment;
 import android.support.v4.app.LoaderManager;
 import android.support.v4.content.CursorLoader;
 import android.support.v4.content.Loader;
 import android.support.v4.widget.SimpleCursorAdapter;
+import android.util.Log;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
@@ -272,7 +277,7 @@ public class OutageListFragment extends ListFragment
     }
 
     /**
-     * Load an article in the default browser when selected by the user.
+     * Load an outage in the default browser when selected by the user.
      */
     @Override
     public void onListItemClick(ListView listView, View view, int position, long id) {
@@ -281,22 +286,47 @@ public class OutageListFragment extends ListFragment
         // Get a URI for the selected item, then start an Activity that displays the URI. Any
         // Activity that filters for ACTION_VIEW and a URI can accept this. In most cases, this will
         // be a browser.
-/*
+
         // Get the item at the selected position, in the form of a Cursor.
         Cursor c = (Cursor) mAdapter.getItem(position);
-        // Get the link to the article represented by the item.
-        String articleUrlString = c.getString(COLUMN_URL_STRING);
-        if (articleUrlString == null) {
-            Log.e(TAG, "Attempt to launch outage with null link");
-            return;
+
+        SharedPreferences sharedPref = PreferenceManager.getDefaultSharedPreferences(getActivity());
+
+        String method = sharedPref.getString("method_list", "");
+        String server = sharedPref.getString("server", "");
+
+        String prefix;
+        if (method.equals("http")) {
+            prefix = "http://" + server;
+        } else if (method.equals("https")) {
+            prefix = "https://" + server;
+        } else if (method.equals("http8960")) {
+            prefix = "http://" + server + ":8960";
+        } else { // method == https8443
+            prefix = "https://" + server + ":8443";
         }
 
-        Log.i(TAG, "Opening URL: " + articleUrlString);
-        // Get a Uri object for the URL string
-        Uri articleURL = Uri.parse(articleUrlString);
-        Intent i = new Intent(Intent.ACTION_VIEW, articleURL);
+        String outageUrlString = prefix + "/opennms/outage/detail.htm?id="
+                + Long.toString(c.getLong(COLUMN_OUTAGE_ID));
+        Log.i(TAG, "Opening URL: " + outageUrlString);
+
+        String user = sharedPref.getString("user", "");
+        Log.d(TAG, "user: " + user);
+        final String password = sharedPref.getString("password", "");
+        Log.d(TAG, "password: " + password);
+
+
+        Uri outageURI = Uri.parse(outageUrlString);
+
+        Intent i = new Intent(Intent.ACTION_VIEW, outageURI);
+
+        Bundle bundle = new Bundle();
+        bundle.putString("Authorization", "Basic ZGVtbzpkZW1v");
+        i.putExtra(Browser.EXTRA_HEADERS, bundle);
+        Log.d(TAG, "intent:" + i.toString());
+
         startActivity(i);
-*/
+
     }
 
     /**
