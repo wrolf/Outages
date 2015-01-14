@@ -36,6 +36,7 @@ import android.support.v4.app.LoaderManager;
 import android.support.v4.content.CursorLoader;
 import android.support.v4.content.Loader;
 import android.support.v4.widget.SimpleCursorAdapter;
+import android.util.Base64;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuInflater;
@@ -310,7 +311,7 @@ public class OutageListFragment extends ListFragment
                 + Long.toString(c.getLong(COLUMN_OUTAGE_ID));
         Log.i(TAG, "Opening URL: " + outageUrlString);
 
-        String user = sharedPref.getString("user", "");
+        final String user = sharedPref.getString("user", "");
         Log.d(TAG, "user: " + user);
         final String password = sharedPref.getString("password", "");
         Log.d(TAG, "password: " + password);
@@ -320,8 +321,11 @@ public class OutageListFragment extends ListFragment
 
         Intent i = new Intent(Intent.ACTION_VIEW, outageURI);
 
+        String authorization = user + ":" + password;
+        String authorizationBase64 = Base64.encodeToString(authorization.getBytes(), 0);
+
         Bundle bundle = new Bundle();
-        bundle.putString("Authorization", "Basic ZGVtbzpkZW1v");
+        bundle.putString("Authorization", "Basic " + authorizationBase64);
         i.putExtra(Browser.EXTRA_HEADERS, bundle);
         Log.d(TAG, "intent:" + i.toString());
 
