@@ -153,8 +153,8 @@ class SyncAdapter extends AbstractThreadedSyncAdapter {
                 prefix = "http://" + server;
             } else if (method.equals("https")) {
                 prefix = "https://" + server;
-            } else if (method.equals("http8960")) {
-                prefix = "http://" + server + ":8960";
+            } else if (method.equals("http8980")) {
+                prefix = "http://" + server + ":8980";
             } else { // method == https8443
                 prefix = "https://" + server + ":8443";
             }

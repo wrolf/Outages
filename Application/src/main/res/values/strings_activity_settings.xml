@@ -24,17 +24,17 @@
     <!-- Example General settings -->
     <string name="pref_header_general">General</string>
 
-    <string name="pref_method">HTTP/HTTPS</string>
+    <string name="pref_method">HTTP/HTTPS and port</string>
     <string-array name="pref_method_titles">
         <item>HTTP</item>
         <item>HTTPS</item>
-        <item>HTTP port 8960</item>
+        <item>HTTP port 8980</item>
         <item>HTTPS port 8443</item>
     </string-array>
     <string-array name="pref_method_values">
         <item>http</item>
         <item>https</item>
-        <item>http8960</item>
+        <item>http8980</item>
         <item>https8443</item>
     </string-array>
 
